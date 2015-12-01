@@ -1,84 +1,147 @@
-import org.jsoup.Connection;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+import edu.uakron.cs.ClassOffering;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.HashMap;
+import java.util.List;
 
-public class Main {
-    public static void main(final String[] args) throws IOException {
-        /**
-         * Get directed to the login page.
-         */
-        final Connection.Response r = Jsoup.connect("https://zipline.uakron.edu/psp/portprod/?cmd=login").followRedirects(true).method(Connection.Method.GET).execute();
-        final Document d = r.parse();
-        final Element e = d.select("form").get(0);
-        final HashMap<String, String> cookies = new HashMap<>();
-        /**
-         * Store our session cookies.
-         */
-        cookies.putAll(r.cookies());
+public class Main implements Runnable {
+    private static final String
+            USERNAME = "",
+            PASSWORD = "";
 
-        /**
-         * Post our login details.
-         */
-        final URL u = r.url();
-        final Connection login = Jsoup.connect(u.getProtocol() + "://" + u.getHost() + "/" + e.attr("action")).followRedirects(true).cookies(cookies);
-        final Elements input = e.select("input");
-        for (final Element el : input) {
-            final String s = el.attr("name");
-            if (s == null || s.isEmpty()) continue;
-            if (s.equals("j_username")) {
-                login.data(s, "");
-            } else if (s.equals("j_password")) {
-                login.data(s, "");
-            } else throw new RuntimeException("Unsupported input field");
+    private final WebDriverWait waiter;
+    private final WebDriver driver;
+
+    public Main() {
+        driver = new FirefoxDriver();
+        waiter = new WebDriverWait(driver, 20);
+
+    }
+
+    public static void main(final String[] args) {
+        final Main m = new Main();
+        m.run();
+    }
+
+    private By waitId(final String id) {
+        waiter.until(ExpectedConditions.presenceOfElementLocated(By.id(id)));
+        return By.id(id);
+    }
+
+    private By waitName(final String name) {
+        waiter.until(ExpectedConditions.presenceOfElementLocated(By.name(name)));
+        return By.name(name);
+    }
+
+    private By waitLink(final String text) {
+        waiter.until(ExpectedConditions.presenceOfElementLocated(By.partialLinkText(text)));
+        return By.partialLinkText(text);
+    }
+
+    private void sleep(final int seconds) {
+        try {
+            Thread.sleep(seconds * 1000);
+        } catch (final InterruptedException e) {
+            throw new RuntimeException(e);
         }
-        final Connection.Response r2 = login.method(Connection.Method.POST).execute();
-        cookies.putAll(r2.cookies());
+    }
 
-        /**
-         * Continue since we "do not support" javascript. ;)
-         */
-        final Document lp = r2.parse();
-        final Element cForm = lp.select("form").get(0);
-        final Connection cont = Jsoup.connect(cForm.attr("action")).followRedirects(true).cookies(cookies);
-        for (final Element el : cForm.select("input")) {
-            final String s = el.attr("name");
-            if (s == null || s.isEmpty()) continue;
-            cont.data(s, el.attr("value"));
-        }
-        final Connection.Response r3 = cont.method(Connection.Method.POST).execute();
-        cookies.putAll(r3.cookies());
+    private WebElement parent(final WebElement e) {
+        return e.findElement(By.xpath(".."));
+    }
 
-        /**
-         * Follow some HTML redirects to set more cookies...
-         */
-        final String baseURL = r3.url().getProtocol() + "://" + r3.url().getHost();
-        final Document i1 = r3.parse();
-        final String f1 = i1.select("meta").get(0).attr("content").split("URL=")[1];
-        final Connection.Response r4 = Jsoup.connect(baseURL + f1).followRedirects(true).cookies(cookies).method(Connection.Method.GET).execute();
-        cookies.putAll(r4.cookies());
-        final String _goto = r4.parse().select("head").get(0).toString();
-        final String redirect = _goto.split("[']")[1];
-        final Connection.Response r5 = Jsoup.connect(redirect).followRedirects(true).cookies(cookies).method(Connection.Method.GET).execute();
-        cookies.putAll(r5.cookies());
-        final Elements pageEls = r5.parse().select("#ADMN_UA_MAX_SERVICES_HMPG");
-        String student_center = null, dars = null;
-        for (Element link : pageEls.select("table").select("a")) {
-            if ("Student Center".equals(link.text())) {
-                student_center = link.attr("href");
-            } else if ("DARS".equals(link.text())) {
-                dars = link.attr("href");
+    private String spanText(final List<WebElement> subs, final int index) {
+        return subs.get(index).findElement(By.tagName("span")).getText();
+    }
+
+    @Override
+    public void run() {
+        System.out.println("Navigating to zipline ...");
+        driver.get("http://zipline.uakron.edu");
+        System.out.println("Waiting for login ...");
+        WebElement el = driver.findElement(waitId("uanetid"));
+        System.out.println("Logging in ...");
+        el.sendKeys(USERNAME);
+        el = driver.findElement(waitName("j_password"));
+        el.sendKeys(PASSWORD);
+
+        el = driver.findElement(By.id("submitimage"));
+        el.click();
+
+        System.out.println("Waiting for Student Center ...");
+        el = driver.findElement(waitLink("Student Center"));
+        System.out.println("Clicked!");
+        el.click();
+
+        System.out.println("Waiting for shitty JSP iframe (why akron, why?) ...");
+        el = driver.findElement(waitId("ptifrmtgtframe"));
+        System.out.println("Switching context ...");
+        driver.switchTo().frame(el);
+
+        System.out.println("Waiting for class search ...");
+        el = driver.findElement(waitId("DERIVED_SSS_SCR_SSS_LINK_ANCHOR1"));
+        System.out.println("Clicked!");
+        el.click();
+
+        System.out.println("Waiting for search form ...");
+        el = driver.findElement(waitId("CLASS_SRCH_WRK2_STRM$35$"));
+        System.out.println("Selecting semester ...");
+        new Select(el).selectByVisibleText("2016 Spring");
+        sleep(5);
+
+        List<WebElement> els;
+        {
+            final String subject = "3460";
+            System.out.println("Changing form data ...");
+
+            el = driver.findElement(waitId("SSR_CLSRCH_WRK_SUBJECT$2"));
+            el.clear();
+            el.sendKeys(subject);
+
+            el = driver.findElement(waitId("CLASS_SRCH_WRK2_SSR_PB_CLASS_SRCH"));
+            System.out.println("Searching classes ...");
+            el.click();
+
+            waiter.until(ExpectedConditions.presenceOfElementLocated(By.className("PAGROUPBOXLABELLEVEL1")));
+            els = driver.findElements(By.className("PAGROUPBOXLABELLEVEL1"));
+            for (WebElement e : els) {
+                el = e.findElement(By.tagName("div"));
+                final String header = el.getText();
+                final String[] parts = header.split("[-]");
+                if (parts.length != 2) {
+                    System.out.println("WARNING: SKIPPING " + header);
+                    continue;
+                }
+                final String[] parts2 = parts[0].trim().split("\\s");
+                parts[1] = parts[1].trim();
+                el = parent(parent(e));
+                final List<WebElement> subs = el.findElements(By.className("PSLEVEL3GRIDROW"));
+                final int classes = subs.size() / 13;
+                if (subs.size() % 13 != 0) {
+                    System.out.println("WARNING: INVALID FORMAT DETECTED ! Skipping.");
+                    continue;
+                }
+                for (int i = 0, v = 0; i < classes; ++i, v += 13) {
+                    final String
+                            dates = subs.get(v + 5).findElement(By.tagName("span")).getText(),
+                            units = subs.get(v + 8).findElement(By.tagName("span")).getText(),
+                            status = subs.get(v + 11).findElement(By.tagName("img")).getAttribute("alt");
+                    System.out.println(dates + " " + units + " " + status);
+
+                    System.out.println(new ClassOffering(
+                            parts[1],
+                            parts2[0], parts2[1],
+                            spanText(subs, v + 3), spanText(subs, v + 4), spanText(subs, v + 9),
+                            ClassOffering.parseDays(spanText(subs, v + 2))
+                    ));
+                }
+                System.out.println();
             }
         }
-        final Connection.Response r6 = Jsoup.connect(student_center).followRedirects(true).cookies(cookies).method(Connection.Method.GET).execute();
-        cookies.putAll(r6.cookies());
-        System.out.println(r6.parse());
-        System.out.println(student_center);
-        System.out.println(dars);
     }
 }

@@ -4,7 +4,7 @@ import java.util.*;
 
 public class DARSParser {
     public static void main(final String[] params) throws Exception {
-        final String s = new String(Files.readAllBytes(Paths.get("./src/audit2.html")));
+        final String s = new String(Files.readAllBytes(Paths.get("./src/audit.html")));
         final ArrayList<String> l = getPreBlocks(s);
         final Map<Req, List<Req>> reqs = new HashMap<>();
         for (int index = 0; index < l.size(); ++index) {
