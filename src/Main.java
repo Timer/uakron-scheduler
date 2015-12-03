@@ -10,9 +10,10 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.util.List;
 
 public class Main implements Runnable {
+    static GUI login = new GUI();
     private static final String
-            USERNAME = "",
-            PASSWORD = "";
+            USERNAME = login.getUser(),
+            PASSWORD = login.getPass();
 
     private final WebDriverWait waiter;
     private final WebDriver driver;
@@ -22,11 +23,11 @@ public class Main implements Runnable {
         waiter = new WebDriverWait(driver, 20);
 
     }
-
-    public static void main(final String[] args) {
-        final Main m = new Main();
-        m.run();
-    }
+    //now in GUI Login
+//    public static void main(final String[] args) {
+//        final Main m = new Main();
+//        m.run();
+//    }
 
     private By waitId(final String id) {
         waiter.until(ExpectedConditions.presenceOfElementLocated(By.id(id)));
