@@ -57,8 +57,8 @@ public class ClassOffering {
     @Override
     public String toString() {
         return String.format(
-                "%s [%s:%s, Days: %s, Room: %s / Instructor: %s, Open: %s, Units: %s]",
-                desc, subject, course, days.toString(), room, professor, Boolean.toString(open), Integer.toString(units)
+                "%s [%s:%s, Days: %s, Room: %s / Instructor: %s, Open: %s [%s students], Units: %s]",
+                desc, subject, course, days.toString(), room, professor, Boolean.toString(open), students, Integer.toString(units)
         );
     }
 }
