@@ -1,110 +1,63 @@
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 public class GUI extends JFrame {
-    private static JTextField userField;
-    private static JPasswordField passField;
-    private static String username, password;
-
-    public void buildLogin() {
-        setTitle("Login");
-        setSize(400, 230);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        /// Build objects
-        userField = new JTextField();
-        passField = new JPasswordField();
-        JPanel northPanel = new JPanel();
-        JPanel centerPanel = new JPanel();
-        JPanel southPanel = new JPanel();
-        Border border = centerPanel.getBorder();
-        Border margin = new EmptyBorder(35, 35, 35, 35);
-        JLabel headingLabel = new JLabel("Enter Your UAkron Login");
-        JLabel userLabel = new JLabel("Username:");
-        JLabel passLabel = new JLabel("Password:");
-        JButton btnLogin = new JButton("  Login  ");
-
-        // set objects
-        headingLabel.setForeground(new Color(235, 235, 235));
-        northPanel.setBackground(new Color(0, 45, 98));
-        centerPanel.setBorder(new CompoundBorder(border, margin));
-        btnLogin.addActionListener(new Login());
-
-        // add objects to panels
-        northPanel.add(headingLabel);
-        centerPanel.add(userLabel);
-        centerPanel.add(userField);
-        centerPanel.add(passLabel);
-        centerPanel.add(passField);
-        centerPanel.setLayout(new GridLayout(2, 2));
-        southPanel.add(btnLogin);
-
-        // add panels
-        add(northPanel, BorderLayout.NORTH);
-        add(centerPanel, BorderLayout.CENTER);
-        add(southPanel, BorderLayout.SOUTH);
-        setLocationRelativeTo(null);
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Throwable ignored) {
-        }
-        setVisible(true);
-    }
-
-    public String getUser() {
-        return username;
-    }
-
-    public String getPass() {
-        return password;
-    }
-
-    static class Login implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            try {
-                if (new GUI().checkSpaces(userField.getText().trim())) {
-                    username = userField.getText();
-                    password = String.valueOf(passField.getPassword());
-                    // run main after button click
-                    final Main m = new Main();
-                    m.run();
+    public static void main(final String[] a) {
+        SwingUtilities.invokeLater(() -> {
+            if (!System.getProperty("os.name").startsWith("Mac")) {
+                try {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                } catch (final Exception ignored) {
                 }
-
-            } catch (Exception validateError) {
-                JOptionPane.showMessageDialog(null, "Error in Class:GUI Method:Login",
-                        "Error", JOptionPane.ERROR_MESSAGE);
             }
 
-        }
+            final GUI g = new GUI();
+
+            g.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            g.pack();
+            g.setLocationRelativeTo(g.getParent());
+            g.setVisible(true);
+        });
     }
 
-    private boolean checkSpaces(String getUser) {
-        String username;
-        try {
-            username = getUser;
-            if (username.contains(" ")) {
-                JOptionPane.showMessageDialog(null, "Invalid input form: USERNAME includes 'space'",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                userField.setText("");
-                passField.setText("");
-                return false;
-            } else return true;
+    public GUI() {
+        setLayout(new BorderLayout());
+        final JPanel header = new JPanel();
+        header.setBackground(new Color(0, 45, 98));
+        final JLabel headerText = new JLabel("Please enter your Zipline Login to get started");
+        headerText.setForeground(new Color(235, 235, 235));
+        header.add(headerText);
+        add(header, BorderLayout.NORTH);
 
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error in Class:GUI Method:checkSpaces",
-                    "Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-    }
+        final JPanel details = new JPanel();
+        final JTextField uf;
+        final JPasswordField pf;
+        details.setLayout(new GridLayout(2, 2));
+        details.add(new JLabel("Username:"));
+        details.add(uf = new JTextField());
+        details.add(new JLabel("Password:"));
+        details.add(pf = new JPasswordField());
+        details.setBorder(BorderFactory.createEmptyBorder(35, 35, 35, 35));
+        add(details, BorderLayout.CENTER);
 
-    public static void main(String[] args) {
-        GUI login = new GUI();
-        login.buildLogin();
-        //new Scheduler();
+        final JPanel login = new JPanel();
+        final JButton l;
+        login.add(l = new JButton("Login"));
+        add(login, BorderLayout.SOUTH);
+
+        l.addActionListener(e -> {
+            final Thread t = new Thread(() -> {
+                final Main m = new Main(uf.getText(), new String(pf.getPassword()));
+                m.run();
+            });
+            t.setDaemon(false);
+            t.start();
+            SwingUtilities.invokeLater(() -> {
+                GUI.this.setVisible(false);
+                GUI.this.dispose();
+            });
+        });
+
+        setTitle("Welcome");
     }
 }

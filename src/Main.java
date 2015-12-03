@@ -10,24 +10,18 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.util.List;
 
 public class Main implements Runnable {
-    static GUI login = new GUI();
-    private static final String
-            USERNAME = login.getUser(),
-            PASSWORD = login.getPass();
-
+    private final String username, password;
     private final WebDriverWait waiter;
     private final WebDriver driver;
 
-    public Main() {
+    public Main(final String username, final String password) {
         driver = new FirefoxDriver();
         waiter = new WebDriverWait(driver, 20);
 
+        this.username = username;
+        this.password = password;
+
     }
-    //now in GUI Login
-//    public static void main(final String[] args) {
-//        final Main m = new Main();
-//        m.run();
-//    }
 
     private By waitId(final String id) {
         waiter.until(ExpectedConditions.presenceOfElementLocated(By.id(id)));
@@ -67,9 +61,9 @@ public class Main implements Runnable {
         System.out.println("Waiting for login ...");
         WebElement el = driver.findElement(waitId("uanetid"));
         System.out.println("Logging in ...");
-        el.sendKeys(USERNAME);
+        el.sendKeys(username);
         el = driver.findElement(waitName("j_password"));
-        el.sendKeys(PASSWORD);
+        el.sendKeys(password);
 
         el = driver.findElement(By.id("submitimage"));
         el.click();
