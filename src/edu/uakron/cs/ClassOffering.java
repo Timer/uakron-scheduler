@@ -5,7 +5,7 @@ import java.util.List;
 
 public class ClassOffering {
     public enum Days {
-        MONDAY("Mo"), TUESDAY("Tu"), WEDNEWDAY("We"), THURSDAY("Th"), FRIDAY("Fr"), UNKNOWN("TBA");
+        MONDAY("Mo"), TUESDAY("Tu"), WEDNESDAY("We"), THURSDAY("Th"), FRIDAY("Fr"), UNKNOWN("TBA");
         public final String key;
 
         Days(final String key) {
