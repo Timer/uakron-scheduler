@@ -92,7 +92,9 @@ public class Main implements Runnable {
         el = driver.findElement(waitId("CLASS_SRCH_WRK2_STRM$35$"));
         System.out.println("Selecting semester ...");
         new Select(el).selectByVisibleText("2016 Spring");
-        sleep(5);
+        sleep(3);
+        el = driver.findElement(waitId("SSR_CLSRCH_WRK_SSR_OPEN_ONLY$8"));
+        el.click();
 
         List<WebElement> els;
         {
