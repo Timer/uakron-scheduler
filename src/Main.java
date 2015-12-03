@@ -114,7 +114,7 @@ public class Main implements Runnable {
             for (WebElement e : els) {
                 el = e.findElement(By.tagName("div"));
                 final String header = el.getText();
-                final String[] parts = header.split("[-]");
+                final String[] parts = header.split("[-]", 2);
                 if (parts.length != 2) {
                     System.out.println("WARNING: SKIPPING " + header);
                     continue;
