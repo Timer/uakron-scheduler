@@ -26,14 +26,17 @@ public class ClassOffering {
             desc,
             subject, course,
             room, professor, students;
-
     public final List<Days> days;
+    public final boolean open;
+    public final int units;
 
     public ClassOffering(
             final String desc,
             final String subject, final String course,
             final String room, final String professor, final String students,
-            final List<Days> days
+            final List<Days> days,
+            final boolean open,
+            final int units
     ) {
         this.desc = desc;
 
@@ -45,13 +48,17 @@ public class ClassOffering {
         this.students = students;
 
         this.days = days;
+
+        this.open = open;
+
+        this.units = units;
     }
 
     @Override
     public String toString() {
         return String.format(
-                "%s [%s:%s, Days: %s, Room: %s / Instructor: %s]",
-                desc, subject, course, days.toString(), room, professor
+                "%s [%s:%s, Days: %s, Room: %s / Instructor: %s, Open: %s, Units: %s]",
+                desc, subject, course, days.toString(), room, professor, Boolean.toString(open), Integer.toString(units)
         );
     }
 }

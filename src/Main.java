@@ -127,17 +127,15 @@ public class Main implements Runnable {
                     continue;
                 }
                 for (int i = 0, v = 0; i < classes; ++i, v += 13) {
-                    final String
-                            dates = subs.get(v + 5).findElement(By.tagName("span")).getText(),
-                            units = subs.get(v + 8).findElement(By.tagName("span")).getText(),
-                            status = subs.get(v + 11).findElement(By.tagName("img")).getAttribute("alt");
-                    System.out.println(dates + " " + units + " " + status);
+                    System.out.println(spanText(subs, v + 5));
 
                     System.out.println(new ClassOffering(
                             parts[1],
                             parts2[0], parts2[1],
                             spanText(subs, v + 3), spanText(subs, v + 4), spanText(subs, v + 9),
-                            ClassOffering.parseDays(spanText(subs, v + 2))
+                            ClassOffering.parseDays(spanText(subs, v + 2)),
+                            subs.get(v + 11).findElement(By.tagName("img")).getAttribute("alt").trim().equalsIgnoreCase("open"),
+                            Integer.parseInt(spanText(subs, v + 8))
                     ));
                 }
                 System.out.println();
