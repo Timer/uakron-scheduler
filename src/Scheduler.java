@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 
 public class Scheduler extends JFrame {
     public static void main(String args[]) {
@@ -213,13 +212,5 @@ public class Scheduler extends JFrame {
         );
 
         pack();
-    }
-
-    private void addBtnActionPerformed(ActionEvent e) {
-        // TODO handle
-    }
-
-    private void remBtnActionPerformed(ActionEvent e) {
-        // TODO handle
     }
 }
