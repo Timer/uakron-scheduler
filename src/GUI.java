@@ -1,5 +1,7 @@
 import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.GridLayout;
 
 public class GUI extends JFrame {
     public static void main(final String[] a) {
@@ -46,15 +48,13 @@ public class GUI extends JFrame {
         add(login, BorderLayout.SOUTH);
 
         l.addActionListener(e -> {
-            final Thread t = new Thread(() -> {
-                final Main m = new Main(uf.getText(), new String(pf.getPassword()));
-                m.run();
-            });
-            t.setDaemon(false);
-            t.start();
             SwingUtilities.invokeLater(() -> {
                 GUI.this.setVisible(false);
                 GUI.this.dispose();
+            });
+            SwingUtilities.invokeLater(() -> {
+                final Scheduler scheduler = new Scheduler(uf.getText(), new String(pf.getPassword()));
+                scheduler.run();
             });
         });
 
