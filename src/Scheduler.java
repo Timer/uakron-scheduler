@@ -9,11 +9,9 @@ public class Scheduler extends JFrame {
             } catch (final Exception ignored) {
             }
         }
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new Scheduler().setVisible(true);
-            }
-        });
+        Scheduler s = new Scheduler();
+        s.setLocationRelativeTo(null);
+        s.setVisible(true);
     }
 
     public Scheduler() {
@@ -21,7 +19,7 @@ public class Scheduler extends JFrame {
     }
 
     private void buildScheduler() {
-
+        //build objects
         //top calendar
         JPanel calendarPanel = new JPanel();
         // center container
@@ -56,10 +54,16 @@ public class Scheduler extends JFrame {
         JLabel studLabel = new JLabel("Students");
         JLabel unitsLabel = new JLabel("Units");
 
+        //frame setup
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setTitle("Akron Scheduler");
         setPreferredSize(new java.awt.Dimension(800, 730));
 
+        //set container layouts
+        centerPanel.setLayout(new java.awt.GridLayout(1, 3));
+        descPanel.setLayout(new java.awt.GridLayout(3, 3));
+
+        //calendar panel
         GroupLayout calendarPanelLayout = new GroupLayout(calendarPanel);
         calendarPanel.setLayout(calendarPanelLayout);
         calendarPanelLayout.setHorizontalGroup(
@@ -71,23 +75,12 @@ public class Scheduler extends JFrame {
                         .addGap(0, 264, Short.MAX_VALUE)
         );
 
-        centerPanel.setLayout(new java.awt.GridLayout(1, 5));
-        descPanel.setLayout(new java.awt.GridLayout(3, 3));
-        descPanel.add(descLabel);
-        descPanel.add(roomLabel);
-        descPanel.add(daysLabel);
-        descPanel.add(subLabel);
-        descPanel.add(profLabel);
-        descPanel.add(openLabel);
-        descPanel.add(courseLabel);
-        descPanel.add(studLabel);
-        descPanel.add(unitsLabel);
-
+        //available setup
         availLabel.setFont(new Font("Tahoma", 0, 18));
         availLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
         availScroll.setViewportView(availTree);
 
+        // available layout
         GroupLayout availPanelLayout = new GroupLayout(availPanel);
         availPanel.setLayout(availPanelLayout);
         availPanelLayout.setHorizontalGroup(
@@ -106,20 +99,12 @@ public class Scheduler extends JFrame {
                                 .addComponent(availScroll, GroupLayout.DEFAULT_SIZE, 343, Short.MAX_VALUE))
         );
 
-        centerPanel.add(availPanel);
 
-
-        //todo handle
-        runBtn.addActionListener(e1 -> System.out.println("runBtn handle"));
-        addBtn.addActionListener(e -> System.out.println("addBtn handle"));
-        remBtn.addActionListener(e -> System.out.println("remBtn handle"));
-
+        //Course number setup
         courseNumField.setHorizontalAlignment(JTextField.CENTER);
-        courseNumField.addActionListener(e -> System.out.println("courseNumField handle"));
-
         courseNumLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        courseNumLabel.setText("Course Number: ");
 
+        //IOPanel layout
         GroupLayout IOPanelLayout = new GroupLayout(IOPanel);
         IOPanel.setLayout(IOPanelLayout);
         IOPanelLayout.setHorizontalGroup(
@@ -156,13 +141,13 @@ public class Scheduler extends JFrame {
                                 .addContainerGap(142, Short.MAX_VALUE))
         );
 
-        centerPanel.add(IOPanel);
 
+        //Schedule setup
         schedLabel.setFont(new Font("Tahoma", 0, 18));
         schedLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
         schedScroll.setViewportView(schedTree);
 
+        //Schedule layout
         GroupLayout schedPanelLayout = new GroupLayout(schedPanel);
         schedPanel.setLayout(schedPanelLayout);
         schedPanelLayout.setHorizontalGroup(
@@ -181,26 +166,26 @@ public class Scheduler extends JFrame {
                                 .addComponent(schedScroll, GroupLayout.DEFAULT_SIZE, 343, Short.MAX_VALUE))
         );
 
-        centerPanel.add(schedPanel);
 
-        GroupLayout layout = new GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-                layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+        // lineBreak layout
+        GroupLayout LBLayout = new GroupLayout(getContentPane());
+        getContentPane().setLayout(LBLayout);
+        LBLayout.setHorizontalGroup(
+                LBLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                         .addComponent(calendarPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(layout.createSequentialGroup()
+                        .addGroup(LBLayout.createSequentialGroup()
                                 .addContainerGap()
                                 .addComponent(descPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGroup(layout.createSequentialGroup()
+                        .addGroup(LBLayout.createSequentialGroup()
                                 .addContainerGap()
-                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                .addGroup(LBLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
                                         .addComponent(centerPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                         .addComponent(lineBreak))
                                 .addContainerGap())
         );
-        layout.setVerticalGroup(
-                layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                        .addGroup(layout.createSequentialGroup()
+        LBLayout.setVerticalGroup(
+                LBLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                        .addGroup(LBLayout.createSequentialGroup()
                                 .addComponent(calendarPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(centerPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -211,6 +196,25 @@ public class Scheduler extends JFrame {
                                 .addGap(20, 20, 20))
         );
 
+        //add everything
+        centerPanel.add(availPanel);
+        centerPanel.add(IOPanel);
+        centerPanel.add(schedPanel);
+        descPanel.add(descLabel);
+        descPanel.add(roomLabel);
+        descPanel.add(daysLabel);
+        descPanel.add(subLabel);
+        descPanel.add(profLabel);
+        descPanel.add(openLabel);
+        descPanel.add(courseLabel);
+        descPanel.add(studLabel);
+        descPanel.add(unitsLabel);
         pack();
+
+        //todo: handle events
+        courseNumField.addActionListener(e -> System.out.println("courseNumField handle"));
+        runBtn.addActionListener(e1 -> System.out.println("runBtn handle"));
+        addBtn.addActionListener(e -> System.out.println("addBtn handle"));
+        remBtn.addActionListener(e -> System.out.println("remBtn handle"));
     }
 }
