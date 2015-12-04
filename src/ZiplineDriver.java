@@ -130,8 +130,9 @@ public class ZiplineDriver implements Runnable {
         t.setDaemon(!KEEP_ALIVE);
         t.start();
 
-        sections.offer("3460");
-        sections.offer("7700");
+        if (KEEP_ALIVE) {
+            sections.offer("3460");
+        }
     }
 
     private Runnable getGrabber() {
