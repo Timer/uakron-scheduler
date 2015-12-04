@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.tree.*;
 import java.awt.*;
 
 public class Scheduler extends JFrame {
@@ -9,7 +10,15 @@ public class Scheduler extends JFrame {
             } catch (final Exception ignored) {
             }
         }
+        // remove folder icon in tree
+        Icon empty = new TreeIcon();
+        UIManager.put("Tree.closedIcon", empty);
+        UIManager.put("Tree.openIcon", empty);
+        UIManager.put("Tree.collapsedIcon", empty);
+        UIManager.put("Tree.expandedIcon", empty);
+        UIManager.put("Tree.leafIcon", empty);
         Scheduler s = new Scheduler();
+
         s.setLocationRelativeTo(null);
         s.setVisible(true);
     }
@@ -55,15 +64,21 @@ public class Scheduler extends JFrame {
         JLabel unitsLabel = new JLabel("Units");
 
         //frame setup
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setTitle("Akron Scheduler");
         setPreferredSize(new java.awt.Dimension(800, 730));
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         //set container layouts
         centerPanel.setLayout(new java.awt.GridLayout(1, 3));
         descPanel.setLayout(new java.awt.GridLayout(3, 3));
 
-        //calendar panel
+        // set default trees
+        clearTree(availTree);
+        clearTree(schedTree);
+        createTree(availTree);
+
+
+        //calendar layout
         GroupLayout calendarPanelLayout = new GroupLayout(calendarPanel);
         calendarPanel.setLayout(calendarPanelLayout);
         calendarPanelLayout.setHorizontalGroup(
@@ -137,7 +152,7 @@ public class Scheduler extends JFrame {
                                 .addGap(48, 48, 48)
                                 .addComponent(addBtn, GroupLayout.PREFERRED_SIZE, 32, GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(remBtn, GroupLayout.PREFERRED_SIZE, 31, GroupLayout.PREFERRED_SIZE)
+                                .addComponent(remBtn, GroupLayout.PREFERRED_SIZE, 32, GroupLayout.PREFERRED_SIZE)
                                 .addContainerGap(142, Short.MAX_VALUE))
         );
 
@@ -213,8 +228,57 @@ public class Scheduler extends JFrame {
 
         //todo: handle events
         courseNumField.addActionListener(e -> System.out.println("courseNumField handle"));
-        runBtn.addActionListener(e1 -> System.out.println("runBtn handle"));
+        runBtn.addActionListener(e -> System.out.println("runBtn handle"));
         addBtn.addActionListener(e -> System.out.println("addBtn handle"));
         remBtn.addActionListener(e -> System.out.println("remBtn handle"));
     }
+
+    private void clearTree(JTree tree) {
+        DefaultMutableTreeNode defaultTree = new javax.swing.tree.DefaultMutableTreeNode("");
+        tree.setModel(new DefaultTreeModel(defaultTree));
+        tree.setRootVisible(false);
+
+    }
+
+    private void createTree(JTree tree) {
+
+        tree.setRootVisible( false );
+        DefaultMutableTreeNode defaultTree = new DefaultMutableTreeNode("");
+        DefaultTreeModel defaultTreeModel = new DefaultTreeModel(defaultTree);
+        tree.setModel( defaultTreeModel );
+        DefaultMutableTreeNode parent;
+        DefaultMutableTreeNode child;
+
+        parent = (DefaultMutableTreeNode) defaultTreeModel.getRoot();
+        child = new DefaultMutableTreeNode( "node 1" );
+        addToTree(defaultTreeModel, parent, child);
+
+        parent = child;
+        child = new DefaultMutableTreeNode( "node 2" );
+        addToTree(defaultTreeModel, parent, child);
+
+        parent = (DefaultMutableTreeNode) defaultTreeModel.getRoot();
+        child = new DefaultMutableTreeNode( "node 3" );
+        addToTree(defaultTreeModel, parent, child);
+
+        parent = child;
+        child = new DefaultMutableTreeNode( "node 4" );
+        addToTree( defaultTreeModel, parent, child);
+    }
+
+    private void addToTree(DefaultTreeModel treeModel, DefaultMutableTreeNode parent, DefaultMutableTreeNode child) {
+        treeModel.insertNodeInto(child, parent, parent.getChildCount());
+        if (parent == treeModel.getRoot()) {
+            treeModel.nodeStructureChanged((TreeNode) treeModel.getRoot());
+        }
+    }
+
+}
+
+class TreeIcon implements Icon {
+    private int SIZE = 0;
+    public TreeIcon() {}
+    public int getIconWidth() { return SIZE; }
+    public int getIconHeight() { return SIZE; }
+    public void paintIcon(Component c, Graphics g, int x, int y) {}
 }
