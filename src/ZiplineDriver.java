@@ -43,6 +43,14 @@ public class ZiplineDriver implements Runnable {
         this.password = password;
     }
 
+    public void offer(final String s) {
+        sections.offer(s);
+    }
+
+    public void shutdown() {
+        driver.close();
+    }
+
     public void addListener(final RosterUpdated l) {
         if (listeners.contains(l)) return;
         listeners.add(l);

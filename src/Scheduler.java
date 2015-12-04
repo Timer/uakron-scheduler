@@ -5,10 +5,13 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Scheduler extends JFrame implements Runnable {
+    private final ZiplineDriver driver;
     private final String username, password;
     private final CustomTreeModel model1, model2;
 
@@ -29,6 +32,12 @@ public class Scheduler extends JFrame implements Runnable {
     @Override
     public void run() {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                driver.shutdown();
+            }
+        });
         pack();
         setMinimumSize(getSize());
         setLocationRelativeTo(getParent());
@@ -36,6 +45,9 @@ public class Scheduler extends JFrame implements Runnable {
     }
 
     public Scheduler(final String username, final String password) {
+        driver = new ZiplineDriver(username, password);
+        new Thread(driver).start();
+        driver.addListener(System.out::println);
         this.username = username;
         this.password = password;
 
@@ -98,6 +110,11 @@ public class Scheduler extends JFrame implements Runnable {
         exchangePanel.add(sectionField, gbc);
         final JButton lookupButton = new JButton();
         lookupButton.setText("Retrieve class[es]");
+        lookupButton.addActionListener((event) -> {
+            final String section = sectionField.getText();
+            sectionField.setText("");
+            driver.offer(section);
+        });
         gbc = new GridBagConstraints(1, 1, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0);
         exchangePanel.add(lookupButton, gbc);
         final JPanel exchangeSpacer = new JPanel();
