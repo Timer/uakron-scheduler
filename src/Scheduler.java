@@ -25,6 +25,7 @@ public class Scheduler extends JFrame {
         setLayout(new GridBagLayout());
         final JPanel calendar = new JPanel();
         calendar.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        for (int i = 0; i < 5; ++i) calendar.add(getWeekday());
         GridBagConstraints gbc = new GridBagConstraints(0, 0, 3, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
         add(calendar, gbc);
         final JPanel information = new JPanel();
@@ -87,5 +88,14 @@ public class Scheduler extends JFrame {
         exchangePanel.add(exchangeSpacer, gbc);
 
         setTitle("Scheduler");
+    }
+
+    private JPanel getWeekday() {
+        final JPanel p = new JPanel();
+        final Dimension d = new Dimension(100, 200);
+        p.setSize(d);
+        p.setMinimumSize(d);
+        p.setPreferredSize(d);
+        return p;
     }
 }
