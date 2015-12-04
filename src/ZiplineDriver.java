@@ -1,4 +1,5 @@
 import edu.uakron.cs.ClassOffering;
+import edu.uakron.cs.RosterUpdated;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -7,13 +8,18 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class ZiplineDriver implements Runnable {
     private static boolean KEEP_ALIVE = false;
+    private final Set<ClassOffering> offerings;
+    private final ConcurrentLinkedDeque<RosterUpdated> listeners;
     private final BlockingQueue<String> sections;
     private final String username, password;
     private final WebDriverWait waiter;
@@ -27,13 +33,23 @@ public class ZiplineDriver implements Runnable {
     }
 
     public ZiplineDriver(final String username, final String password) {
+        offerings = new HashSet<>();
+        listeners = new ConcurrentLinkedDeque<>();
         sections = new LinkedBlockingQueue<>();
         driver = new FirefoxDriver();
         waiter = new WebDriverWait(driver, 20);
 
         this.username = username;
         this.password = password;
+    }
 
+    public void addListener(final RosterUpdated l) {
+        if (listeners.contains(l)) return;
+        listeners.add(l);
+    }
+
+    public void removeListener(final RosterUpdated l) {
+        listeners.remove(l);
     }
 
     private By waitId(final String id) {
@@ -159,9 +175,8 @@ public class ZiplineDriver implements Runnable {
                         continue;
                     }
                     for (int i = 0, v = 0; i < classes; ++i, v += 13) {
-                        System.out.println(spanText(subs, v + 5));
-
-                        System.out.println(new ClassOffering(
+                        //System.out.println(spanText(subs, v + 5));//TODO: this
+                        offerings.add(new ClassOffering(
                                 aText(subs, v), aText(subs, v + 1).replace('\n', ' '),
                                 parts[1],
                                 parts2[0], parts2[1],
@@ -171,12 +186,13 @@ public class ZiplineDriver implements Runnable {
                                 Integer.parseInt(spanText(subs, v + 8))
                         ));
                     }
-                    System.out.println();
                 }
 
                 el = driver.findElement(waitId("CLASS_SRCH_WRK2_SSR_PB_MODIFY"));
                 el.click();
                 sleep(3);
+
+                for (final RosterUpdated l : listeners) l.updated(offerings);
             }
         };
     }
