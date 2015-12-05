@@ -180,7 +180,7 @@ public class ZiplineDriver implements Runnable {
                     final List<WebElement> subs = el.findElements(By.className("PSLEVEL3GRIDROW"));
                     final int classes = subs.size() / 13;
                     if (subs.size() % 13 != 0) {
-                        System.out.println("WARNING: INVALID FORMAT DETECTED ! Skipping.");
+                        System.out.println("WARNING: INVALID FORMAT DETECTED! Skipping.");
                         continue;
                     }
                     for (int i = 0, v = 0; i < classes; ++i, v += 13) {

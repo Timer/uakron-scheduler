@@ -1,3 +1,5 @@
+import edu.uakron.cs.ClassOffering;
+
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
@@ -7,10 +9,13 @@ import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.ArrayList;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Scheduler extends JFrame implements Runnable {
+    private final LinkedList<Map.Entry<String, List<ClassOffering>>> entryList;
     private final ZiplineDriver driver;
     private final String username, password;
     private final CustomTreeModel model1, model2;
@@ -42,12 +47,27 @@ public class Scheduler extends JFrame implements Runnable {
         setMinimumSize(getSize());
         setLocationRelativeTo(getParent());
         setVisible(true);
+
+        driver.addListener(offerings -> {
+            final Map<String, List<ClassOffering>> agg = new LinkedHashMap<>();
+            for (final ClassOffering o : offerings) {
+                final List<ClassOffering> l;
+                final String k = o.subject + ':' + o.course;
+                if (agg.containsKey(k)) l = agg.get(k);
+                else agg.put(k, l = new LinkedList<>());
+                l.add(o);
+            }
+            entryList.clear();
+            entryList.addAll(agg.entrySet().stream().collect(Collectors.toList()));
+            entryList.sort((o1, o2) -> o1.getKey().compareTo(o2.getKey()));
+            model1.refresh();
+        });
     }
 
     public Scheduler(final String username, final String password) {
+        entryList = new LinkedList<>();
         driver = new ZiplineDriver(username, password);
         new Thread(driver).start();
-        driver.addListener(System.out::println);
         this.username = username;
         this.password = password;
 
@@ -133,11 +153,13 @@ public class Scheduler extends JFrame implements Runnable {
         return p;
     }
 
-    private JTree treeify(final JTree tree) {
+    private JComponent treeify(final JTree tree) {
         tree.setRootVisible(false);
         tree.setEditable(false);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        return tree;
+        final JScrollPane p = new JScrollPane(tree);
+        p.setPreferredSize(new Dimension(400, 300));
+        return p;
     }
 
     private class CustomTreeModel implements TreeModel {
@@ -151,17 +173,34 @@ public class Scheduler extends JFrame implements Runnable {
 
         @Override
         public Object getChild(final Object parent, final int index) {
+            if (parent == root) {
+                return new ClassEncapsulator(entryList.get(index));
+            } else if (parent instanceof ClassEncapsulator) {
+                final List<ClassOffering> o = ((ClassEncapsulator) parent).entry.getValue();
+                return new OfferEncapsulator(o.get(index));
+            }
             return null;
         }
 
         @Override
         public int getChildCount(final Object parent) {
+            if (parent == root) {
+                return entryList.size();
+            } else if (parent instanceof ClassEncapsulator) {
+                final List<ClassOffering> o = ((ClassEncapsulator) parent).entry.getValue();
+                return o.size();
+            }
             return 0;
         }
 
         @Override
         public boolean isLeaf(final Object node) {
-            return false;
+            if (node == root) return getChildCount(root) < 1;
+            if (node instanceof ClassEncapsulator) {
+                final List<ClassOffering> o = ((ClassEncapsulator) node).entry.getValue();
+                return o.isEmpty();
+            }
+            return true;
         }
 
         @Override
@@ -192,6 +231,49 @@ public class Scheduler extends JFrame implements Runnable {
             for (final TreeModelListener tml : treeModelListeners) {
                 tml.treeStructureChanged(e);
             }
+        }
+    }
+
+    private final class OfferEncapsulator {
+        public final ClassOffering offering;
+
+        public OfferEncapsulator(final ClassOffering offering) {
+            this.offering = offering;
+        }
+
+        private String toStr(final List<ClassOffering.DayPair> pairs) {
+            String s = "";
+            for (final ClassOffering.DayPair p : pairs) {
+                s += p.day.key + " ";
+            }
+            final ClassOffering.DayPair p = pairs.size() < 1 ? null : pairs.get(0);
+            if (p == null || p.start == null || p.end == null) s = s.trim();
+            else {
+                s += p.start.format(DateTimeFormatter.ofPattern("h:mm a"));
+                s += " - ";
+                s += p.end.format(DateTimeFormatter.ofPattern("h:mm a"));
+            }
+            return s;
+        }
+
+        @Override
+        public String toString() {
+            return toStr(offering.days) + " " + offering.professor;
+        }
+    }
+
+    private final class ClassEncapsulator {
+        public final Map.Entry<String, List<ClassOffering>> entry;
+
+        public ClassEncapsulator(final Map.Entry<String, List<ClassOffering>> entry) {
+            this.entry = entry;
+        }
+
+        @Override
+        public String toString() {
+            final List<ClassOffering> l = entry.getValue();
+            if (l.isEmpty()) return entry.getKey();
+            return entry.getKey() + " " + l.get(0).desc;
         }
     }
 }
