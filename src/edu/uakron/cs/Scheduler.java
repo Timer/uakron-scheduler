@@ -1,4 +1,4 @@
-import edu.uakron.cs.ClassOffering;
+package edu.uakron.cs;
 
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;

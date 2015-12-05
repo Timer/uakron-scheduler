@@ -1,9 +1,11 @@
+package edu.uakron.cs;
+
 import javax.swing.*;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridLayout;
 
-public class GUI extends JFrame {
+public class Login extends JFrame {
     public static void main(final String[] a) {
         SwingUtilities.invokeLater(() -> {
             if (!System.getProperty("os.name").startsWith("Mac")) {
@@ -13,7 +15,7 @@ public class GUI extends JFrame {
                 }
             }
 
-            final GUI g = new GUI();
+            final Login g = new Login();
 
             g.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
             g.pack();
@@ -22,7 +24,7 @@ public class GUI extends JFrame {
         });
     }
 
-    public GUI() {
+    public Login() {
         setLayout(new BorderLayout());
         final JPanel header = new JPanel();
         header.setBackground(new Color(0, 45, 98));
@@ -49,8 +51,8 @@ public class GUI extends JFrame {
 
         l.addActionListener(e -> {
             SwingUtilities.invokeLater(() -> {
-                GUI.this.setVisible(false);
-                GUI.this.dispose();
+                Login.this.setVisible(false);
+                Login.this.dispose();
             });
             SwingUtilities.invokeLater(() -> {
                 final Scheduler scheduler = new Scheduler(uf.getText(), new String(pf.getPassword()));

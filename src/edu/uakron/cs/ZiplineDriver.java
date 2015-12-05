@@ -1,5 +1,5 @@
-import edu.uakron.cs.ClassOffering;
-import edu.uakron.cs.RosterUpdated;
+package edu.uakron.cs;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
