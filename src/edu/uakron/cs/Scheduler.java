@@ -195,7 +195,7 @@ public class Scheduler extends JFrame implements Runnable {
                     if (pair == null || pair.start == null || pair.end == null) continue;
                     final long sm = ChronoUnit.MINUTES.between(p.v1, pair.start), em = ChronoUnit.MINUTES.between(p.v1, pair.end);
                     final double p_start = sm / (double) tm, p_end = em / (double) tm;
-                    final int d_start = (int) Math.round(p_start * (r.height-2)), d_end = (int) Math.round(p_end * (r.height-2));
+                    final int d_start = (int) Math.round(p_start * (r.height - 2)), d_end = (int) Math.round(p_end * (r.height - 2));
                     g.drawRect(5, d_start, r.width - 10, d_end - d_start);
                     g.drawString(o.desc, (r.width - met.stringWidth(o.desc)) / 2, (d_start + d_end) / 2);
                 }
