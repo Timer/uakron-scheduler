@@ -176,7 +176,7 @@ public class Scheduler extends JFrame implements Runnable {
                 final ClassOffering.Days day = ClassOffering.Days.values()[index];
                 final Rectangle r = g.getClipBounds();
                 g.setColor(Color.BLACK);
-                g.drawRect(0, 0, r.width, r.height);
+                g.drawRect(0, 0, r.width - 1, r.height - 1);
                 final List<ClassOffering> ol = new LinkedList<>();
                 final List<List<ClassOffering>> l = choseList.stream().map(Map.Entry::getValue).collect(Collectors.toList());
                 l.forEach(ol::addAll);
@@ -195,7 +195,7 @@ public class Scheduler extends JFrame implements Runnable {
                     if (pair == null || pair.start == null || pair.end == null) continue;
                     final long sm = ChronoUnit.MINUTES.between(p.v1, pair.start), em = ChronoUnit.MINUTES.between(p.v1, pair.end);
                     final double p_start = sm / (double) tm, p_end = em / (double) tm;
-                    final int d_start = (int) Math.round(p_start * r.height), d_end = (int) Math.round(p_end * r.height);
+                    final int d_start = (int) Math.round(p_start * (r.height-2)), d_end = (int) Math.round(p_end * (r.height-2));
                     g.drawRect(5, d_start, r.width - 10, d_end - d_start);
                     g.drawString(o.desc, (r.width - met.stringWidth(o.desc)) / 2, (d_start + d_end) / 2);
                 }
@@ -285,6 +285,7 @@ public class Scheduler extends JFrame implements Runnable {
 
         @Override
         public Object getChild(final Object parent, final int index) {
+            if (index >= getChildCount(parent)) return null;
             if (parent == root) {
                 return new ClassEncapsulator(list.get(index));
             } else if (parent instanceof ClassEncapsulator) {
@@ -322,7 +323,7 @@ public class Scheduler extends JFrame implements Runnable {
         @Override
         public int getIndexOfChild(final Object parent, final Object child) {
             final int c = getChildCount(parent);
-            for (int i = 0; i < c; ++i) if (getChild(parent, c).equals(child)) return i;
+            for (int i = 0; i < c; ++i) if (child.equals(getChild(parent, c))) return i;
             return 0;
         }
 
