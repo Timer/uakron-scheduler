@@ -272,6 +272,8 @@ public class Scheduler extends JFrame implements Runnable {
 
         @Override
         public int getIndexOfChild(final Object parent, final Object child) {
+            final int c = getChildCount(parent);
+            for (int i = 0; i < c; ++i) if (getChild(parent, c).equals(child)) return i;
             return 0;
         }
 
