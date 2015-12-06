@@ -7,6 +7,7 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.time.format.DateTimeFormatter;
@@ -15,7 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Scheduler extends JFrame implements Runnable {
-    private final LinkedList<Map.Entry<String, List<ClassOffering>>> entryList;
+    private final LinkedList<Map.Entry<String, List<ClassOffering>>> chooseList, choseList;
     private final ZiplineDriver driver;
     private final String username, password;
     private final CustomTreeModel model1, model2;
@@ -57,15 +58,16 @@ public class Scheduler extends JFrame implements Runnable {
                 else agg.put(k, l = new LinkedList<>());
                 l.add(o);
             }
-            entryList.clear();
-            entryList.addAll(agg.entrySet().stream().collect(Collectors.toList()));
-            entryList.sort((o1, o2) -> o1.getKey().compareTo(o2.getKey()));
+            chooseList.clear();
+            chooseList.addAll(agg.entrySet().stream().collect(Collectors.toList()));
+            chooseList.sort((o1, o2) -> o1.getKey().compareTo(o2.getKey()));
             model1.refresh();
         });
     }
 
     public Scheduler(final String username, final String password) {
-        entryList = new LinkedList<>();
+        chooseList = new LinkedList<>();
+        choseList = new LinkedList<>();
         driver = new ZiplineDriver(username, password);
         new Thread(driver).start();
         this.username = username;
@@ -101,7 +103,8 @@ public class Scheduler extends JFrame implements Runnable {
         label2.setHorizontalAlignment(SwingConstants.CENTER);
         label2.setText("Available Classes");
         classSelection.add(label2, BorderLayout.NORTH);
-        final JTree treeSelect = new JTree(model1 = new CustomTreeModel());
+        final JTree treeSelect = new JTree();
+        treeSelect.setModel(model1 = new CustomTreeModel(treeSelect, chooseList));
         classSelection.add(treeify(treeSelect), BorderLayout.CENTER);
         final JPanel classSchedule = new JPanel();
         classSchedule.setLayout(new BorderLayout(0, 0));
@@ -111,7 +114,8 @@ public class Scheduler extends JFrame implements Runnable {
         label3.setHorizontalAlignment(SwingConstants.CENTER);
         label3.setText("Selected Classes");
         classSchedule.add(label3, BorderLayout.NORTH);
-        final JTree treeSelected = new JTree(model2 = new CustomTreeModel());
+        final JTree treeSelected = new JTree();
+        treeSelected.setModel(model2 = new CustomTreeModel(treeSelected, true, choseList));
         classSchedule.add(treeify(treeSelected), BorderLayout.CENTER);
         final JPanel exchangePanel = new JPanel();
         exchangePanel.setLayout(new GridBagLayout());
@@ -119,10 +123,12 @@ public class Scheduler extends JFrame implements Runnable {
         add(exchangePanel, gbc);
         final JButton buttonRemove = new JButton();
         buttonRemove.setText("<< Remove");
+        buttonRemove.addActionListener(this::remove);
         gbc = new GridBagConstraints(1, 4, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0);
         exchangePanel.add(buttonRemove, gbc);
         final JButton buttonAdd = new JButton();
         buttonAdd.setText("Add >>");
+        buttonAdd.addActionListener(this::add);
         gbc = new GridBagConstraints(1, 3, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0);
         exchangePanel.add(buttonAdd, gbc);
         final JTextField sectionField = new JTextField();
@@ -162,9 +168,66 @@ public class Scheduler extends JFrame implements Runnable {
         return p;
     }
 
+    private void add(final ActionEvent e) {
+        final Object o = model1.tree.getLastSelectedPathComponent();
+        if (!(o instanceof OfferEncapsulator)) return;
+        final OfferEncapsulator oe = (OfferEncapsulator) o;
+        final TreePath p = model1.tree.getSelectionPath();
+        final ClassEncapsulator ce = (ClassEncapsulator) p.getParentPath().getLastPathComponent();
+        add(ce.entry, oe.offering);
+    }
+
+    private void remove(final ActionEvent e) {
+        final Object o = model2.tree.getLastSelectedPathComponent();
+        if (!(o instanceof OfferEncapsulator)) return;
+        final OfferEncapsulator oe = (OfferEncapsulator) o;
+        final TreePath p = model2.tree.getSelectionPath();
+        final ClassEncapsulator ce = (ClassEncapsulator) p.getParentPath().getLastPathComponent();
+        remove(ce.entry, oe.offering);
+    }
+
+    private void add(final Map.Entry<String, List<ClassOffering>> e, final ClassOffering o) {
+        if (e.getValue().remove(o)) {
+            final List<Map.Entry<String, List<ClassOffering>>> l = choseList.stream().filter(v -> v.getKey().equals(e.getKey())).collect(Collectors.toList());
+            if (l.isEmpty()) choseList.add(new AbstractMap.SimpleEntry<>(e.getKey(), new ArrayList<ClassOffering>(1) {{
+                add(o);
+            }}));
+            else {
+                l.get(0).getValue().add(o);
+            }
+            model1.refresh();
+            model2.refresh();
+        }
+    }
+
+    private void remove(final Map.Entry<String, List<ClassOffering>> e, final ClassOffering o) {
+        if (e.getValue().remove(o)) {
+            if (e.getValue().isEmpty()) choseList.remove(e);
+            final List<Map.Entry<String, List<ClassOffering>>> l = chooseList.stream().filter(v -> v.getKey().equals(e.getKey())).collect(Collectors.toList());
+            if (l.isEmpty()) return;
+            l.get(0).getValue().add(o);
+            model1.refresh();
+            model2.refresh();
+        }
+    }
+
     private class CustomTreeModel implements TreeModel {
+        private final JTree tree;
+        private final boolean expand;
         private final Object root = new Object();
         private final List<TreeModelListener> treeModelListeners = new ArrayList<>();
+
+        private final LinkedList<Map.Entry<String, List<ClassOffering>>> list;
+
+        public CustomTreeModel(final JTree tree, final LinkedList<Map.Entry<String, List<ClassOffering>>> list) {
+            this(tree, false, list);
+        }
+
+        public CustomTreeModel(final JTree tree, final boolean expand, final LinkedList<Map.Entry<String, List<ClassOffering>>> list) {
+            this.tree = tree;
+            this.expand = expand;
+            this.list = list;
+        }
 
         @Override
         public final Object getRoot() {
@@ -174,7 +237,7 @@ public class Scheduler extends JFrame implements Runnable {
         @Override
         public Object getChild(final Object parent, final int index) {
             if (parent == root) {
-                return new ClassEncapsulator(entryList.get(index));
+                return new ClassEncapsulator(list.get(index));
             } else if (parent instanceof ClassEncapsulator) {
                 final List<ClassOffering> o = ((ClassEncapsulator) parent).entry.getValue();
                 return new OfferEncapsulator(o.get(index));
@@ -185,7 +248,7 @@ public class Scheduler extends JFrame implements Runnable {
         @Override
         public int getChildCount(final Object parent) {
             if (parent == root) {
-                return entryList.size();
+                return list.size();
             } else if (parent instanceof ClassEncapsulator) {
                 final List<ClassOffering> o = ((ClassEncapsulator) parent).entry.getValue();
                 return o.size();
@@ -224,6 +287,7 @@ public class Scheduler extends JFrame implements Runnable {
 
         public void refresh() {
             fireTreeStructureChanged();
+            if (expand) for (int i = 0; i < tree.getRowCount(); i++) tree.expandRow(i);
         }
 
         private void fireTreeStructureChanged() {
