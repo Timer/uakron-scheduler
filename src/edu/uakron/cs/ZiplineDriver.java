@@ -41,6 +41,8 @@ public class ZiplineDriver implements Runnable {
 
         this.username = username;
         this.password = password;
+
+        Runtime.getRuntime().addShutdownHook(new Thread(driver::quit));
     }
 
     public void offer(final String s) {
