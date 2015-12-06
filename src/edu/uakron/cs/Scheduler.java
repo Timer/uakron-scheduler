@@ -52,6 +52,7 @@ public class Scheduler extends JFrame implements Runnable {
                 else agg.put(k, l = new LinkedList<>());
                 l.add(o);
             }
+            //TODO: filter out already selected stuff
             chooseList.clear();
             chooseList.addAll(agg.entrySet().stream().collect(Collectors.toList()));
             chooseList.sort((o1, o2) -> o1.getKey().compareTo(o2.getKey()));
@@ -69,8 +70,8 @@ public class Scheduler extends JFrame implements Runnable {
 
         setLayout(new GridBagLayout());
         final JPanel calendar = new JPanel();
-        calendar.setLayout(new GridLayout(1, ClassOffering.Days.values().length, 5, 5));
-        for (int i = 0; i < ClassOffering.Days.values().length; ++i) calendar.add(getWeekday(i));
+        calendar.setLayout(new GridLayout(1, ClassOffering.Days.values().length - 1, 5, 5));
+        for (int i = 0; i < ClassOffering.Days.values().length - 1; ++i) calendar.add(getWeekday(i));
         calendar.revalidate();
         calendar.setSize(calendar.getPreferredSize());
         GridBagConstraints gbc = new GridBagConstraints(0, 0, 3, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
