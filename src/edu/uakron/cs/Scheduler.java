@@ -8,9 +8,9 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,12 +38,6 @@ public class Scheduler extends JFrame implements Runnable {
     @Override
     public void run() {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                driver.shutdown();
-            }
-        });
         pack();
         setMinimumSize(getSize());
         setLocationRelativeTo(getParent());
@@ -75,8 +69,10 @@ public class Scheduler extends JFrame implements Runnable {
 
         setLayout(new GridBagLayout());
         final JPanel calendar = new JPanel();
-        calendar.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-        for (int i = 0; i < 5; ++i) calendar.add(getWeekday());
+        calendar.setLayout(new GridLayout(1, ClassOffering.Days.values().length, 5, 5));
+        for (int i = 0; i < ClassOffering.Days.values().length; ++i) calendar.add(getWeekday(i));
+        calendar.revalidate();
+        calendar.setSize(calendar.getPreferredSize());
         GridBagConstraints gbc = new GridBagConstraints(0, 0, 3, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
         add(calendar, gbc);
         final JPanel information = new JPanel();
@@ -148,13 +144,63 @@ public class Scheduler extends JFrame implements Runnable {
         exchangePanel.add(exchangeSpacer, gbc);
 
         setTitle("Scheduler");
+
+        revalidate();
     }
 
-    private JPanel getWeekday() {
-        final JPanel p = new JPanel();
+    private Pair<LocalTime, LocalTime> getRange() {
+        final Pair<LocalTime, LocalTime> p = new Pair<>();
+        final List<ClassOffering> ol = new LinkedList<>();
+        final List<List<ClassOffering>> l = choseList.stream().map(Map.Entry::getValue).collect(Collectors.toList());
+        l.forEach(ol::addAll);
+        for (final ClassOffering o : ol) {
+            for (final ClassOffering.DayPair pair : o.days) {
+                try {
+                    if (p.v1 == null) p.v1 = pair.start;
+                    else if (pair.start.isBefore(p.v1)) p.v1 = pair.start;
+                    if (p.v2 == null) p.v2 = pair.end;
+                    else if (pair.end.isAfter(p.v2)) p.v2 = pair.end;
+                } catch (final NullPointerException ignored) {
+                }
+            }
+        }
+        return p;
+    }
+
+    private JComponent getWeekday(final int index) {
+        final JComponent p = new JComponent() {
+            @Override
+            protected void paintComponent(final Graphics g) {
+                super.paintComponent(g);
+                final ClassOffering.Days day = ClassOffering.Days.values()[index];
+                final Rectangle r = g.getClipBounds();
+                g.setColor(Color.BLACK);
+                g.drawRect(0, 0, r.width, r.height);
+                final List<ClassOffering> ol = new LinkedList<>();
+                final List<List<ClassOffering>> l = choseList.stream().map(Map.Entry::getValue).collect(Collectors.toList());
+                l.forEach(ol::addAll);
+                final List<ClassOffering> od = ol.stream().filter(
+                        e -> e.days.stream().map(e2 -> e2.day).collect(Collectors.toList()).contains(day)
+                ).collect(Collectors.toList());
+
+                final Pair<LocalTime, LocalTime> p = getRange();
+                if (p.v1 == null || p.v2 == null) return;
+                g.setFont(new Font("Arial", NORMAL, 10));
+                final FontMetrics met = g.getFontMetrics();
+                final long tm = ChronoUnit.MINUTES.between(p.v1, p.v2);
+                for (final ClassOffering o : od) {
+                    ClassOffering.DayPair pair = null;
+                    for (final ClassOffering.DayPair dp : o.days) if (dp.day == day) pair = dp;
+                    if (pair == null || pair.start == null || pair.end == null) continue;
+                    final long sm = ChronoUnit.MINUTES.between(p.v1, pair.start), em = ChronoUnit.MINUTES.between(p.v1, pair.end);
+                    final double p_start = sm / (double) tm, p_end = em / (double) tm;
+                    final int d_start = (int) Math.round(p_start * r.height), d_end = (int) Math.round(p_end * r.height);
+                    g.drawRect(5, d_start, r.width - 10, d_end - d_start);
+                    g.drawString(o.desc, (r.width - met.stringWidth(o.desc)) / 2, (d_start + d_end) / 2);
+                }
+            }
+        };
         final Dimension d = new Dimension(100, 200);
-        p.setSize(d);
-        p.setMinimumSize(d);
         p.setPreferredSize(d);
         return p;
     }
@@ -197,6 +243,7 @@ public class Scheduler extends JFrame implements Runnable {
             }
             model1.refresh();
             model2.refresh();
+            repaint();
         }
     }
 
@@ -208,6 +255,7 @@ public class Scheduler extends JFrame implements Runnable {
             l.get(0).getValue().add(o);
             model1.refresh();
             model2.refresh();
+            repaint();
         }
     }
 
@@ -341,5 +389,10 @@ public class Scheduler extends JFrame implements Runnable {
             if (l.isEmpty()) return entry.getKey();
             return entry.getKey() + " " + l.get(0).desc;
         }
+    }
+
+    private class Pair<V1, V2> {
+        private V1 v1;
+        private V2 v2;
     }
 }
