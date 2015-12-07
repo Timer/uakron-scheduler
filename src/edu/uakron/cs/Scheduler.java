@@ -3,9 +3,7 @@ package edu.uakron.cs;
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
-import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.time.LocalTime;
@@ -17,7 +15,7 @@ import java.util.stream.Collectors;
 
 /**
  * TODO
- * color code classes for conflicts, dars stuff
+ * color code classes for dars stuff
  * class information panel at bottom
  * "looking up classes" notification
  * recovery from bad lookup entry
@@ -25,6 +23,7 @@ import java.util.stream.Collectors;
  */
 public class Scheduler extends JFrame implements Runnable {
     private final LinkedList<Map.Entry<String, List<ClassOffering>>> chooseList, choseList;
+    private final LinkedList<ClassOffering.DayPair> dayPairs;
     private final ZiplineDriver driver;
     private final String username, password;
     private final CustomTreeModel model1, model2;
@@ -76,10 +75,34 @@ public class Scheduler extends JFrame implements Runnable {
     public Scheduler(final String username, final String password) {
         chooseList = new LinkedList<>();
         choseList = new LinkedList<>();
+        dayPairs = new LinkedList<>();
         driver = new ZiplineDriver(username, password);
         new Thread(driver).start();
         this.username = username;
         this.password = password;
+
+        final TreeCellRenderer renderer = new DefaultTreeCellRenderer() {
+            @Override
+            public java.awt.Component getTreeCellRendererComponent(final JTree tree,
+                                                                   final Object value, final boolean selected, final boolean expanded,
+                                                                   final boolean leaf, final int row, final boolean hasFocus) {
+                super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
+                this.setForeground(Color.black);
+                if (value instanceof OfferEncapsulator) {
+                    final ClassOffering o = ((OfferEncapsulator) value).offering;
+                    for (final ClassOffering.DayPair pair : o.days) {
+                        int hits = 0;
+                        for (final ClassOffering.DayPair e : dayPairs) {
+                            if (pair.day != e.day) continue;
+                            if (pair.start.compareTo(e.start) >= 0 && pair.start.compareTo(e.end) <= 0) ++hits;
+                            else if (pair.end.compareTo(e.start) >= 0 && pair.end.compareTo(e.end) <= 0) ++hits;
+                        }
+                        if (hits >= 2) this.setForeground(Color.red);
+                    }
+                }
+                return this;
+            }
+        };
 
         setLayout(new GridBagLayout());
         final JPanel calendar = new JPanel();
@@ -114,6 +137,7 @@ public class Scheduler extends JFrame implements Runnable {
         label2.setText("Available Classes");
         classSelection.add(label2, BorderLayout.NORTH);
         final JTree treeSelect = new JTree();
+        treeSelect.setCellRenderer(renderer);
         treeSelect.setModel(model1 = new CustomTreeModel(treeSelect, chooseList));
         classSelection.add(treeify(treeSelect), BorderLayout.CENTER);
         final JPanel classSchedule = new JPanel();
@@ -125,6 +149,7 @@ public class Scheduler extends JFrame implements Runnable {
         label3.setText("Selected Classes");
         classSchedule.add(label3, BorderLayout.NORTH);
         final JTree treeSelected = new JTree();
+        treeSelected.setCellRenderer(renderer);
         treeSelected.setModel(model2 = new CustomTreeModel(treeSelected, true, choseList));
         classSchedule.add(treeify(treeSelected), BorderLayout.CENTER);
         final JPanel exchangePanel = new JPanel();
@@ -255,6 +280,7 @@ public class Scheduler extends JFrame implements Runnable {
             else {
                 l.get(0).getValue().add(o);
             }
+            createPairs();
             model1.refresh();
             model2.refresh();
             repaint();
@@ -267,9 +293,19 @@ public class Scheduler extends JFrame implements Runnable {
             final List<Map.Entry<String, List<ClassOffering>>> l = chooseList.stream().filter(v -> v.getKey().equals(e.getKey())).collect(Collectors.toList());
             if (l.isEmpty()) return;
             l.get(0).getValue().add(o);
+            createPairs();
             model1.refresh();
             model2.refresh();
             repaint();
+        }
+    }
+
+    private void createPairs() {
+        dayPairs.clear();
+        for (final Map.Entry<String, List<ClassOffering>> entry : choseList) {
+            for (final ClassOffering o2 : entry.getValue()) {
+                dayPairs.addAll(o2.days);
+            }
         }
     }
 
