@@ -15,6 +15,14 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * TODO
+ * color code classes for conflicts, dars stuff
+ * class information panel at bottom
+ * "looking up classes" notification
+ * recovery from bad lookup entry
+ * pull current schedule
+ */
 public class Scheduler extends JFrame implements Runnable {
     private final LinkedList<Map.Entry<String, List<ClassOffering>>> chooseList, choseList;
     private final ZiplineDriver driver;
@@ -52,10 +60,15 @@ public class Scheduler extends JFrame implements Runnable {
                 else agg.put(k, l = new LinkedList<>());
                 l.add(o);
             }
-            //TODO: filter out already selected stuff
             chooseList.clear();
             chooseList.addAll(agg.entrySet().stream().collect(Collectors.toList()));
             chooseList.sort((o1, o2) -> o1.getKey().compareTo(o2.getKey()));
+            for (final Map.Entry<String, List<ClassOffering>> chosenEntry : choseList) {
+                for (final Map.Entry<String, List<ClassOffering>> chooseEntry : chooseList) {
+                    if (!chosenEntry.getKey().equals(chooseEntry.getKey())) continue;
+                    chooseEntry.getValue().removeAll(chosenEntry.getValue());
+                }
+            }
             model1.refresh();
         });
     }
