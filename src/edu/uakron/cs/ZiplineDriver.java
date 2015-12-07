@@ -1,5 +1,6 @@
 package edu.uakron.cs;
 
+import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -8,9 +9,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -21,9 +20,11 @@ public class ZiplineDriver implements Runnable {
     private final Set<ClassOffering> offerings;
     private final ConcurrentLinkedDeque<RosterUpdated> listeners;
     private final BlockingQueue<String> sections;
+    private final Set<String> done = new HashSet<>();
     private final String username, password;
     private final WebDriverWait waiter;
     private final WebDriver driver;
+    private final LinkedList<String> needStr;
 
     public static void main(final String[] params) {
         if (params.length != 2) return;
@@ -33,24 +34,46 @@ public class ZiplineDriver implements Runnable {
     }
 
     public ZiplineDriver(final String username, final String password) {
-        offerings = new HashSet<>();
+        offerings = new ConcurrentHashSet<>();
         listeners = new ConcurrentLinkedDeque<>();
         sections = new LinkedBlockingQueue<>();
         driver = new FirefoxDriver();
         waiter = new WebDriverWait(driver, 20);
 
+        needStr = new LinkedList<>();
+
         this.username = username;
         this.password = password;
 
         Runtime.getRuntime().addShutdownHook(new Thread(driver::quit));
+
+        final Thread t = new Thread(() -> {
+            final DARSParser parser = new DARSParser(username, password);
+            parser.run();
+            for (final DARSParser.Need need : parser.needs) {
+                System.out.println(need);
+                final DARSParser.Accept[] accepts = need.getAccepts();
+                System.out.println(Arrays.toString(accepts));
+                for (final DARSParser.Accept accept : accepts) {
+                    final String c = accept.c;
+                    final String[] a = c.split("OR");
+                    for (final String s : a) {
+                        final String[] a2 = s.split("[:]");
+                        if (a2.length < 2) continue;
+                        a2[1] = a2[1].substring(0, 3);
+                        needStr.add(a2[0] + ":" + a2[1].replace('*', '.'));
+                    }
+                }
+            }
+
+            for (final RosterUpdated u : listeners) u.updated(needStr);
+        });
+        t.setDaemon(true);
+        t.start();
     }
 
     public void offer(final String s) {
         sections.offer(s);
-    }
-
-    public void shutdown() {
-        driver.close();
     }
 
     public void addListener(final RosterUpdated l) {
@@ -148,13 +171,15 @@ public class ZiplineDriver implements Runnable {
     private Runnable getGrabber() {
         return () -> {
             for (; ; ) {
-                final String subject;
+                String subject;
                 try {
                     subject = sections.poll(5, TimeUnit.SECONDS);
                 } catch (final InterruptedException ignored) {
                     break;
                 }
-                if (subject == null) continue;
+                if (subject == null || (subject = subject.trim()).isEmpty()) continue;
+                if (done.contains(subject)) continue;
+                done.add(subject);
 
                 System.out.printf("Changing form subject to %s ...%n", subject);
 
@@ -168,36 +193,41 @@ public class ZiplineDriver implements Runnable {
 
                 waiter.until(ExpectedConditions.presenceOfElementLocated(By.className("PAGROUPBOXLABELLEVEL1")));
                 List<WebElement> els = driver.findElements(By.className("PAGROUPBOXLABELLEVEL1"));
-                for (WebElement e : els) {
-                    el = e.findElement(By.tagName("div"));
-                    final String header = el.getText();
+                els.parallelStream().map(e -> {
+                    WebElement el1 = e.findElement(By.tagName("div"));
+                    final String header = el1.getText();
                     final String[] parts = header.split("[-]", 2);
                     if (parts.length != 2) {
                         System.out.println("WARNING: SKIPPING " + header);
-                        continue;
+                        return null;
                     }
                     final String[] parts2 = parts[0].trim().split("\\s");
                     parts[1] = parts[1].trim();
-                    el = parent(parent(e));
-                    final List<WebElement> subs = el.findElements(By.className("PSLEVEL3GRIDROW"));
+                    el1 = parent(parent(e));
+                    final List<WebElement> subs = el1.findElements(By.className("PSLEVEL3GRIDROW"));
                     final int classes = subs.size() / 13;
                     if (subs.size() % 13 != 0) {
                         System.out.println("WARNING: INVALID FORMAT DETECTED! Skipping.");
-                        continue;
+                        return null;
                     }
-                    for (int i = 0, v = 0; i < classes; ++i, v += 13) {
-                        //System.out.println(spanText(subs, v + 5));//TODO: this
-                        offerings.add(new ClassOffering(
-                                aText(subs, v), aText(subs, v + 1).replace('\n', ' '),
-                                parts[1],
-                                parts2[0], parts2[1],
-                                spanText(subs, v + 3), spanText(subs, v + 4), spanText(subs, v + 9),
-                                ClassOffering.parseDays(spanText(subs, v + 2)),
-                                subs.get(v + 11).findElement(By.tagName("img")).getAttribute("alt").trim().equalsIgnoreCase("open"),
-                                Integer.parseInt(spanText(subs, v + 8))
-                        ));
+                    final List<Integer> iL = new ArrayList<>(classes);
+                    for (int i = 0; i < classes; ++i) {
+                        iL.add(13 * i);
                     }
-                }
+                    iL.parallelStream().map(v -> offerings.add(new ClassOffering(
+                            aText(subs, v), aText(subs, v + 1).replace('\n', ' '),
+                            parts[1],
+                            parts2[0], parts2[1],
+                            spanText(subs, v + 3), spanText(subs, v + 4), spanText(subs, v + 9),
+                            ClassOffering.parseDays(spanText(subs, v + 2)),
+                            subs.get(v + 11).findElement(By.tagName("img")).getAttribute("alt").trim().equalsIgnoreCase("open"),
+                            Integer.parseInt(spanText(subs, v + 8))
+                    ))).count();
+                    return null;
+                }).count();
+
+
+                System.out.println("Completed fetching classes for " + subject + " ...");
 
                 el = driver.findElement(waitId("CLASS_SRCH_WRK2_SSR_PB_MODIFY"));
                 el.click();

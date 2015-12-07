@@ -27,6 +27,7 @@ public class Scheduler extends JFrame implements Runnable {
     private final ZiplineDriver driver;
     private final String username, password;
     private final CustomTreeModel model1, model2;
+    private List<String> dars;
 
     public static void main(final String[] a) {
         SwingUtilities.invokeLater(() -> {
@@ -50,25 +51,41 @@ public class Scheduler extends JFrame implements Runnable {
         setLocationRelativeTo(getParent());
         setVisible(true);
 
-        driver.addListener(offerings -> {
-            final Map<String, List<ClassOffering>> agg = new LinkedHashMap<>();
-            for (final ClassOffering o : offerings) {
-                final List<ClassOffering> l;
-                final String k = o.subject + ':' + o.course;
-                if (agg.containsKey(k)) l = agg.get(k);
-                else agg.put(k, l = new LinkedList<>());
-                l.add(o);
-            }
-            chooseList.clear();
-            chooseList.addAll(agg.entrySet().stream().collect(Collectors.toList()));
-            chooseList.sort((o1, o2) -> o1.getKey().compareTo(o2.getKey()));
-            for (final Map.Entry<String, List<ClassOffering>> chosenEntry : choseList) {
-                for (final Map.Entry<String, List<ClassOffering>> chooseEntry : chooseList) {
-                    if (!chosenEntry.getKey().equals(chooseEntry.getKey())) continue;
-                    chooseEntry.getValue().removeAll(chosenEntry.getValue());
+        driver.addListener(new RosterUpdated() {
+            @Override
+            public void updated(Set<ClassOffering> offerings) {
+                final Map<String, List<ClassOffering>> agg = new LinkedHashMap<>();
+                for (final ClassOffering o : offerings) {
+                    final List<ClassOffering> l;
+                    final String k = o.subject + ':' + o.course;
+                    if (agg.containsKey(k)) l = agg.get(k);
+                    else agg.put(k, l = new LinkedList<>());
+                    l.add(o);
                 }
+                chooseList.clear();
+                chooseList.addAll(agg.entrySet().stream().collect(Collectors.toList()));
+                chooseList.sort((o1, o2) -> o1.getKey().compareTo(o2.getKey()));
+                for (final Map.Entry<String, List<ClassOffering>> chosenEntry : choseList) {
+                    for (final Map.Entry<String, List<ClassOffering>> chooseEntry : chooseList) {
+                        if (!chosenEntry.getKey().equals(chooseEntry.getKey())) continue;
+                        chooseEntry.getValue().removeAll(chosenEntry.getValue());
+                    }
+                }
+                model1.refresh();
+                model2.refresh();
             }
-            model1.refresh();
+
+            @Override
+            public void updated(final List<String> classes) {
+                for (final String s : classes) {
+                    final String[] arr = s.split("[:]");
+                    if (arr.length != 2) continue;
+                    driver.offer(arr[0]);
+                }
+                dars = new LinkedList<>(classes);
+                model1.refresh();
+                model2.refresh();
+            }
         });
     }
 
@@ -80,6 +97,7 @@ public class Scheduler extends JFrame implements Runnable {
         new Thread(driver).start();
         this.username = username;
         this.password = password;
+        this.dars = new LinkedList<>();
 
         setLayout(new GridBagLayout());
         final JPanel calendar = new JPanel();
@@ -183,6 +201,14 @@ public class Scheduler extends JFrame implements Runnable {
                             else if (pair.end.compareTo(e.start) >= 0 && pair.end.compareTo(e.end) <= 0) ++hits;
                         }
                         if (hits >= count) this.setForeground(Color.red);
+                    }
+                } else if (value instanceof ClassEncapsulator) {
+                    final String c = ((ClassEncapsulator) value).entry.getKey();
+                    for (final String e : dars) {
+                        if (c.matches(e)) {
+                            setForeground(Color.green.darker());
+                            break;
+                        }
                     }
                 }
                 return this;

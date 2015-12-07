@@ -1,16 +1,46 @@
 package edu.uakron.cs;
 
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
 public class DARSParser implements Runnable {
+    private final String username, password;
     private final String content;
     public final LinkedList<Need> needs;
+    private final WebDriverWait waiter;
+    private final WebDriver driver;
 
     public DARSParser(final String content) {
+        this(null, null, content);
+    }
+
+    public DARSParser(final String username, final String password) {
+        this(username, password, null);
+    }
+
+    public DARSParser(final String username, final String password, final String content) {
         this.content = content;
         needs = new LinkedList<>();
+        driver = new FirefoxDriver();
+        waiter = new WebDriverWait(driver, 20);
+
+        this.username = username;
+        this.password = password;
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                driver.quit();
+            } catch (final Throwable ignored) {
+            }
+        }));
     }
 
     public static void main(final String[] params) throws Exception {
@@ -25,6 +55,9 @@ public class DARSParser implements Runnable {
 
     @Override
     public void run() {
+        String content = this.content;
+        if (content == null) content = fetchContent();
+        driver.quit();
         final ArrayList<String> l = getPreBlocks(content);
         final Map<Req, List<Req>> requirements = new HashMap<>();
         for (final String pre : l) {
@@ -64,9 +97,76 @@ public class DARSParser implements Runnable {
         }
     }
 
-    private static class Accept {
-        private final String c;
-        private final boolean required;
+    private By waitId(final String id) {
+        waiter.until(ExpectedConditions.presenceOfElementLocated(By.id(id)));
+        return By.id(id);
+    }
+
+    private By waitName(final String name) {
+        waiter.until(ExpectedConditions.presenceOfElementLocated(By.name(name)));
+        return By.name(name);
+    }
+
+    private By waitLink(final String text) {
+        waiter.until(ExpectedConditions.presenceOfElementLocated(By.partialLinkText(text)));
+        return By.partialLinkText(text);
+    }
+
+    private void sleep(final int seconds) {
+        try {
+            Thread.sleep(seconds * 1000);
+        } catch (final InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String fetchContent() {
+        System.out.println("Navigating to zipline ...");
+        driver.get("http://zipline.uakron.edu");
+        System.out.println("Waiting for login ...");
+        WebElement el = driver.findElement(waitId("uanetid"));
+        System.out.println("Logging in ...");
+        el.sendKeys(username);
+        el = driver.findElement(waitName("j_password"));
+        el.sendKeys(password);
+
+        el = driver.findElement(By.id("submitimage"));
+        el.click();
+
+        System.out.println("Waiting for Student Center ...");
+        el = driver.findElement(waitLink("DARS"));
+        System.out.println("Clicked!");
+        driver.get(el.getAttribute("href"));
+
+        System.out.println("Waiting for DARS ...");
+        el = driver.findElement(By.id("OPTION1RESULTS"));
+        sleep(2);
+        System.out.println("Running report ...");
+        el = el.findElement(By.cssSelector("input[type='Button']"));
+        el.click();
+        System.out.println("Searching for main form ...");
+        driver.findElement(By.cssSelector("form[name='mainForm']"));
+        System.out.println("Waiting for for the audit to run ...");
+        sleep(8);
+        System.out.println("Attempting to open audit ...");
+        String handle = driver.getWindowHandle();
+        el = driver.findElement(By.cssSelector("input[value='Open Audit']"));
+        el.click();
+        sleep(3);
+        driver.close();
+        for (String winHandle : driver.getWindowHandles()) {
+            if (winHandle.equals(handle)) continue;
+            System.out.println("Switching browsers ...");
+            driver.switchTo().window(winHandle);
+            break;
+        }
+        sleep(5);
+        return driver.getPageSource();
+    }
+
+    public static class Accept {
+        public final String c;
+        public final boolean required;
 
         private Accept(String c) {
             c = c.trim();
@@ -81,7 +181,7 @@ public class DARSParser implements Runnable {
         }
     }
 
-    private static class Need {
+    public static class Need {
         private final int count;
         private final String type;
         private final String data;
