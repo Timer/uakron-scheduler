@@ -1,12 +1,32 @@
+package edu.uakron.cs;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class DARSParser {
+public class DARSParser implements Runnable {
+    private final String content;
+    public final LinkedList<Need> needs;
+
+    public DARSParser(final String content) {
+        this.content = content;
+        needs = new LinkedList<>();
+    }
+
     public static void main(final String[] params) throws Exception {
         final String s = new String(Files.readAllBytes(Paths.get("./joe.html")));
-        final ArrayList<String> l = getPreBlocks(s);
-        final Map<Req, List<Req>> reqs = new HashMap<>();
+        final DARSParser d = new DARSParser(s);
+        d.run();
+        for (final Need need : d.needs) {
+            System.out.println(need);
+            System.out.println(Arrays.toString(need.getAccepts()));
+        }
+    }
+
+    @Override
+    public void run() {
+        final ArrayList<String> l = getPreBlocks(content);
+        final Map<Req, List<Req>> requirements = new HashMap<>();
         for (final String pre : l) {
             if (!pre.contains("NEEDS")) continue;
             String sub = pre;
@@ -18,12 +38,12 @@ public class DARSParser {
                 final int nn = sub.indexOf("NEEDS:");
                 final Req r = new Req(data, nn != -1 ? sub.substring(0, nn) : sub);
                 if (parent != null) {
-                    reqs.get(parent).add(r);
-                } else reqs.put(parent = r, new LinkedList<>());
+                    requirements.get(parent).add(r);
+                } else requirements.put(parent = r, new LinkedList<>());
             }
         }
-        final List<Need> needz = new LinkedList<>();
-        for (final Map.Entry<Req, List<Req>> e : reqs.entrySet()) {
+        needs.clear();
+        for (final Map.Entry<Req, List<Req>> e : requirements.entrySet()) {
             for (final Req r : e.getValue()) {
                 final String[] checks = {"course", "credit"};
                 final String req = r.toString();
@@ -36,16 +56,11 @@ public class DARSParser {
                             String body = "";
                             String[] bodyArr = r.body.split("\n");
                             for (final String ba : bodyArr) if (ba.contains("AcceptCourse")) body += ba;
-                            needz.add(new Need(count, check, body));
+                            needs.add(new Need(count, check, body));
                         }
                     }
                 }
             }
-        }
-
-        for (final Need need : needz) {
-            System.out.println(need);
-            System.out.println(Arrays.toString(need.getAccepts()));
         }
     }
 
