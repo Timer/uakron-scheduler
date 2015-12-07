@@ -81,29 +81,6 @@ public class Scheduler extends JFrame implements Runnable {
         this.username = username;
         this.password = password;
 
-        final TreeCellRenderer renderer = new DefaultTreeCellRenderer() {
-            @Override
-            public java.awt.Component getTreeCellRendererComponent(final JTree tree,
-                                                                   final Object value, final boolean selected, final boolean expanded,
-                                                                   final boolean leaf, final int row, final boolean hasFocus) {
-                super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
-                this.setForeground(Color.black);
-                if (value instanceof OfferEncapsulator) {
-                    final ClassOffering o = ((OfferEncapsulator) value).offering;
-                    for (final ClassOffering.DayPair pair : o.days) {
-                        int hits = 0;
-                        for (final ClassOffering.DayPair e : dayPairs) {
-                            if (pair.day != e.day) continue;
-                            if (pair.start.compareTo(e.start) >= 0 && pair.start.compareTo(e.end) <= 0) ++hits;
-                            else if (pair.end.compareTo(e.start) >= 0 && pair.end.compareTo(e.end) <= 0) ++hits;
-                        }
-                        if (hits >= 2) this.setForeground(Color.red);
-                    }
-                }
-                return this;
-            }
-        };
-
         setLayout(new GridBagLayout());
         final JPanel calendar = new JPanel();
         calendar.setLayout(new GridLayout(1, ClassOffering.Days.values().length - 1, 5, 5));
@@ -137,7 +114,6 @@ public class Scheduler extends JFrame implements Runnable {
         label2.setText("Available Classes");
         classSelection.add(label2, BorderLayout.NORTH);
         final JTree treeSelect = new JTree();
-        treeSelect.setCellRenderer(renderer);
         treeSelect.setModel(model1 = new CustomTreeModel(treeSelect, chooseList));
         classSelection.add(treeify(treeSelect), BorderLayout.CENTER);
         final JPanel classSchedule = new JPanel();
@@ -149,7 +125,6 @@ public class Scheduler extends JFrame implements Runnable {
         label3.setText("Selected Classes");
         classSchedule.add(label3, BorderLayout.NORTH);
         final JTree treeSelected = new JTree();
-        treeSelected.setCellRenderer(renderer);
         treeSelected.setModel(model2 = new CustomTreeModel(treeSelected, true, choseList));
         classSchedule.add(treeify(treeSelected), BorderLayout.CENTER);
         final JPanel exchangePanel = new JPanel();
@@ -182,9 +157,37 @@ public class Scheduler extends JFrame implements Runnable {
         gbc = new GridBagConstraints(1, 2, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.VERTICAL, new Insets(0, 0, 0, 0), 0, 0);
         exchangePanel.add(exchangeSpacer, gbc);
 
+        treeSelect.setCellRenderer(getRenderer(1));
+        treeSelected.setCellRenderer(getRenderer(2));
+
         setTitle("Scheduler");
 
         revalidate();
+    }
+
+    private TreeCellRenderer getRenderer(final int count) {
+        return new DefaultTreeCellRenderer() {
+            @Override
+            public java.awt.Component getTreeCellRendererComponent(final JTree tree,
+                                                                   final Object value, final boolean selected, final boolean expanded,
+                                                                   final boolean leaf, final int row, final boolean hasFocus) {
+                super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
+                this.setForeground(Color.black);
+                if (value instanceof OfferEncapsulator) {
+                    final ClassOffering o = ((OfferEncapsulator) value).offering;
+                    for (final ClassOffering.DayPair pair : o.days) {
+                        int hits = 0;
+                        for (final ClassOffering.DayPair e : dayPairs) {
+                            if (pair.day != e.day) continue;
+                            if (pair.start.compareTo(e.start) >= 0 && pair.start.compareTo(e.end) <= 0) ++hits;
+                            else if (pair.end.compareTo(e.start) >= 0 && pair.end.compareTo(e.end) <= 0) ++hits;
+                        }
+                        if (hits >= count) this.setForeground(Color.red);
+                    }
+                }
+                return this;
+            }
+        };
     }
 
     private Pair<LocalTime, LocalTime> getRange() {
