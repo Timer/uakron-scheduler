@@ -98,18 +98,49 @@ public class Scheduler extends JFrame implements Runnable {
         this.username = username;
         this.password = password;
         this.dars = new LinkedList<>();
-
         setLayout(new GridBagLayout());
+
+        final JPanel days = new JPanel();
+        days.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
+        days.setLayout(new GridLayout(1, 5));
+        JLabel m = new JLabel("Monday");
+        JLabel tu = new JLabel("Tuesday");
+        JLabel w = new JLabel("Wednesday");
+        JLabel th = new JLabel("Thursday");
+        JLabel f = new JLabel("Friday");
+        m.setFont(new Font("Sans Serif", NORMAL, 12));
+        tu.setFont(new Font("Sans Serif", NORMAL, 12));
+        w.setFont(new Font("Sans Serif", NORMAL, 12));
+        th.setFont(new Font("Sans Serif", NORMAL, 12));
+        f.setFont(new Font("Sans Serif", NORMAL, 12));
+        m.setHorizontalAlignment(SwingConstants.CENTER);
+        tu.setHorizontalAlignment(SwingConstants.CENTER);
+        w.setHorizontalAlignment(SwingConstants.CENTER);
+        th.setHorizontalAlignment(SwingConstants.CENTER);
+        f.setHorizontalAlignment(SwingConstants.CENTER);
+        days.add(m);
+        days.add(tu);
+        days.add(w);
+        days.add(th);
+        days.add(f);
+        days.revalidate();
+        GridBagConstraints gbc = new GridBagConstraints(0, 0, 3, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
+        days.setSize(days.getPreferredSize());
+        add(days, gbc);
+
         final JPanel calendar = new JPanel();
+        calendar.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         calendar.setLayout(new GridLayout(1, ClassOffering.Days.values().length - 1, 5, 5));
         for (int i = 0; i < ClassOffering.Days.values().length - 1; ++i) calendar.add(getWeekday(i));
         calendar.revalidate();
         calendar.setSize(calendar.getPreferredSize());
-        GridBagConstraints gbc = new GridBagConstraints(0, 0, 3, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
+        gbc = new GridBagConstraints(0, 1, 3, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
         add(calendar, gbc);
+
         final JPanel information = new JPanel();
+        information.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
         information.setLayout(new GridBagLayout());
-        gbc = new GridBagConstraints(0, 2, 3, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
+        gbc = new GridBagConstraints(0, 3, 3, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
         add(information, gbc);
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
@@ -123,31 +154,38 @@ public class Scheduler extends JFrame implements Runnable {
         panel2.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         gbc = new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
         information.add(panel2, gbc);
+
         final JPanel classSelection = new JPanel();
+        classSelection.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
         classSelection.setLayout(new BorderLayout(0, 0));
-        gbc = new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
+        gbc = new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
         add(classSelection, gbc);
         final JLabel label2 = new JLabel();
         label2.setHorizontalAlignment(SwingConstants.CENTER);
         label2.setText("Available Classes");
+        label2.setFont(new Font("San Serif", Font.PLAIN, 16));
         classSelection.add(label2, BorderLayout.NORTH);
         final JTree treeSelect = new JTree();
         treeSelect.setModel(model1 = new CustomTreeModel(treeSelect, chooseList));
         classSelection.add(treeify(treeSelect), BorderLayout.CENTER);
+
         final JPanel classSchedule = new JPanel();
+        classSchedule.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
         classSchedule.setLayout(new BorderLayout(0, 0));
-        gbc = new GridBagConstraints(2, 1, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
+        gbc = new GridBagConstraints(2, 2, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
         add(classSchedule, gbc);
         final JLabel label3 = new JLabel();
         label3.setHorizontalAlignment(SwingConstants.CENTER);
         label3.setText("Selected Classes");
+        label3.setFont(new Font("San Serif", Font.PLAIN, 16));
         classSchedule.add(label3, BorderLayout.NORTH);
         final JTree treeSelected = new JTree();
         treeSelected.setModel(model2 = new CustomTreeModel(treeSelected, true, choseList));
         classSchedule.add(treeify(treeSelected), BorderLayout.CENTER);
+
         final JPanel exchangePanel = new JPanel();
         exchangePanel.setLayout(new GridBagLayout());
-        gbc = new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
+        gbc = new GridBagConstraints(1, 2, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0);
         add(exchangePanel, gbc);
         final JButton buttonRemove = new JButton();
         buttonRemove.setText("<< Remove");
@@ -163,7 +201,7 @@ public class Scheduler extends JFrame implements Runnable {
         gbc = new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0);
         exchangePanel.add(sectionField, gbc);
         final JButton lookupButton = new JButton();
-        lookupButton.setText("Retrieve class[es]");
+        lookupButton.setText("Retrieve Classes");
         lookupButton.addActionListener((event) -> {
             final String section = sectionField.getText();
             sectionField.setText("");
@@ -237,12 +275,11 @@ public class Scheduler extends JFrame implements Runnable {
 
     private JComponent getWeekday(final int index) {
         final JComponent p = new JComponent() {
-            @Override
             protected void paintComponent(final Graphics g) {
                 super.paintComponent(g);
                 final ClassOffering.Days day = ClassOffering.Days.values()[index];
                 final Rectangle r = g.getClipBounds();
-                g.setColor(Color.BLACK);
+                g.setColor(new Color(150,150,150));
                 g.drawRect(0, 0, r.width - 1, r.height - 1);
                 final List<ClassOffering> ol = new LinkedList<>();
                 final List<List<ClassOffering>> l = choseList.stream().map(Map.Entry::getValue).collect(Collectors.toList());
@@ -250,10 +287,9 @@ public class Scheduler extends JFrame implements Runnable {
                 final List<ClassOffering> od = ol.stream().filter(
                         e -> e.days.stream().map(e2 -> e2.day).collect(Collectors.toList()).contains(day)
                 ).collect(Collectors.toList());
-
                 final Pair<LocalTime, LocalTime> p = getRange();
                 if (p.v1 == null || p.v2 == null) return;
-                g.setFont(new Font("Arial", NORMAL, 10));
+                g.setFont(new Font("San Serif", NORMAL, 10));
                 final FontMetrics met = g.getFontMetrics();
                 final long tm = ChronoUnit.MINUTES.between(p.v1, p.v2);
                 for (final ClassOffering o : od) {
@@ -263,7 +299,9 @@ public class Scheduler extends JFrame implements Runnable {
                     final long sm = ChronoUnit.MINUTES.between(p.v1, pair.start), em = ChronoUnit.MINUTES.between(p.v1, pair.end);
                     final double p_start = sm / (double) tm, p_end = em / (double) tm;
                     final int d_start = (int) Math.round(p_start * (r.height - 2)), d_end = (int) Math.round(p_end * (r.height - 2));
-                    g.drawRect(5, d_start, r.width - 10, d_end - d_start);
+                    g.setColor(new Color(52, 152, 219));
+                    g.fillRect(5, d_start, r.width - 10, d_end - d_start);
+                    g.setColor(Color.white);
                     g.drawString(o.desc, (r.width - met.stringWidth(o.desc)) / 2, (d_start + d_end) / 2);
                 }
             }
