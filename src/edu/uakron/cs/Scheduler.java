@@ -231,6 +231,7 @@ public class Scheduler extends JFrame implements Runnable {
                 this.setForeground(Color.black);
                 if (value instanceof OfferEncapsulator) {
                     final ClassOffering o = ((OfferEncapsulator) value).offering;
+                    if (!o.open) this.setForeground(Color.yellow.darker());
                     for (final ClassOffering.DayPair pair : o.days) {
                         int hits = 0;
                         for (final ClassOffering.DayPair e : dayPairs) {
@@ -279,7 +280,7 @@ public class Scheduler extends JFrame implements Runnable {
                 super.paintComponent(g);
                 final ClassOffering.Days day = ClassOffering.Days.values()[index];
                 final Rectangle r = g.getClipBounds();
-                g.setColor(new Color(150,150,150));
+                g.setColor(new Color(150, 150, 150));
                 g.drawRect(0, 0, r.width - 1, r.height - 1);
                 final List<ClassOffering> ol = new LinkedList<>();
                 final List<List<ClassOffering>> l = choseList.stream().map(Map.Entry::getValue).collect(Collectors.toList());
