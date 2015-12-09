@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 /**
  * TODO
- * color code classes for dars stuff
  * class information panel at bottom
  * "looking up classes" notification
  * recovery from bad lookup entry

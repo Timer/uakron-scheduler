@@ -30,7 +30,7 @@ public class DARSParser implements Runnable {
         this.content = content;
         needs = new LinkedList<>();
         driver = new FirefoxDriver();
-        waiter = new WebDriverWait(driver, 20);
+        waiter = new WebDriverWait(driver, 30);
 
         this.username = username;
         this.password = password;
