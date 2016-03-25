@@ -152,7 +152,7 @@ public class ZiplineDriver implements Runnable {
         System.out.println("Waiting for search form ...");
         el = driver.findElement(waitId("CLASS_SRCH_WRK2_STRM$35$"));
         System.out.println("Selecting semester ...");
-        new Select(el).selectByVisibleText("2016 Summer");
+        new Select(el).selectByVisibleText("2016 Fall");
         sleep(3);
         el = driver.findElement(waitId("SSR_CLSRCH_WRK_SSR_OPEN_ONLY$8"));
         el.click();
@@ -191,7 +191,12 @@ public class ZiplineDriver implements Runnable {
                 System.out.println("Searching classes ...");
                 el.click();
 
-                waiter.until(ExpectedConditions.presenceOfElementLocated(By.className("PAGROUPBOXLABELLEVEL1")));
+                try {
+                    waiter.until(ExpectedConditions.presenceOfElementLocated(By.className("PAGROUPBOXLABELLEVEL1")));
+                } catch (final Exception ignored) {
+                    System.out.println("Skipping " + subject);
+                    continue;
+                }
                 List<WebElement> els = driver.findElements(By.className("PAGROUPBOXLABELLEVEL1"));
                 els.parallelStream().map(e -> {
                     WebElement el1 = e.findElement(By.tagName("div"));
