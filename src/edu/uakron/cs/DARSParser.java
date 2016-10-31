@@ -7,6 +7,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -29,6 +30,7 @@ public class DARSParser implements Runnable {
     public DARSParser(final String username, final String password, final String content) {
         this.content = content;
         needs = new LinkedList<>();
+        System.setProperty("webdriver.gecko.driver", new File("./lib/geckodriver").getAbsolutePath());
         driver = new FirefoxDriver();
         waiter = new WebDriverWait(driver, 30);
 
@@ -145,6 +147,7 @@ public class DARSParser implements Runnable {
         el = el.findElement(By.cssSelector("input[type='Button']"));
         el.click();
         System.out.println("Searching for main form ...");
+        waitName("mainForm");
         driver.findElement(By.cssSelector("form[name='mainForm']"));
         System.out.println("Waiting for for the audit to run ...");
         sleep(8);

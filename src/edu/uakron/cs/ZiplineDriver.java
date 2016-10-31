@@ -9,6 +9,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -37,6 +38,7 @@ public class ZiplineDriver implements Runnable {
         offerings = new ConcurrentHashSet<>();
         listeners = new ConcurrentLinkedDeque<>();
         sections = new LinkedBlockingQueue<>();
+        System.setProperty("webdriver.gecko.driver", new File("./lib/geckodriver").getAbsolutePath());
         driver = new FirefoxDriver();
         waiter = new WebDriverWait(driver, 20);
 
